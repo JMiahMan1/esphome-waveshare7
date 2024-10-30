@@ -1,3 +1,8 @@
+substitutions:
+  name: waveshare-7-screen
+  friendly_name: waveshare-7-jarvis
+  api_key: "ChangeMe"
+
 #Sensors
   # Weather
   out_tempature_entity: sensor.weather_temperature
@@ -24,7 +29,12 @@
   garage_door: switch.garage_door
 
   #Lighting
+  # Page 1
   living_room_lamp1: light.piano_lamp
+  # Page 2
+  masterbed_lamp_left: light.master_bed_lamp_left
+  masterbed_lamp_right: light.master_bed_lamp_right
+
 
   font_glyphs: '&@!"''%()<>+=,-_.:°/$€£¥?0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyzÀàÁáÂâÃãÄäĀāĂăÅåǺǻẠạĄąÆæǼǽĆćĈĉČčĊċÇçĎďĐđÐðÈèÉéÊêẼẽĚěËëĒēĔĕĖėẸẹĘęĜĝǦǧĞğĠġĢģĤĥĦħıÌìÍíÎîĨĩÏïĪīĬĭİỊịĮįȷĴĵĶķĸĹĺĽľĻļŁłĿŀŃńÑñŇňŅņƝɲŊŋŉÒòÓóÔôÕõÖöŌōŎŏŐőỌọǪǫØøǾǿŒœŔŕŘřŖŗŚśŜŝŠšŞşȘșẞßŤťŢţȚțŦŧÞþÙùÚúÛûŨũÜüŪūŬŭŮůŰűỤụŲųẀẁẂẃŴŵẄẅỲỳÝýŶŷỸỹŸÿȲȳŹźŽžŻżĲĳƏə'  
 
@@ -209,6 +219,32 @@ text_sensor:
                 text_color: blue
             - lvgl.label.update:
                 id: set_temp_label
+                text: "Thermostat\nOff Schedule"
+
+  - platform: homeassistant
+    id: set_temp2_mode
+    entity_id: ${us_set_climate_entity}
+    internal: true
+    attribute: preset_mode
+    filters:
+      - lambda: return x;
+    on_value:
+      - if:
+          condition:
+            - lambda: return x == "NoHold";
+          then:
+            - lvgl.label.update:
+                id: set_temp2_lvgl
+                text_color: white
+            - lvgl.label.update:
+                id: set_temp2_label
+                text: "Thermostat\nOn Schedule"
+          else:
+            - lvgl.label.update:
+                id: set_temp2_lvgl
+                text_color: blue
+            - lvgl.label.update:
+                id: set_temp2_label
                 text: "Thermostat\nOff Schedule"
 
   - platform: homeassistant
@@ -482,6 +518,20 @@ sensor:
           text:
             format: "%.0f°F"
             args: [ 'x' ]
+
+  - platform: homeassistant
+    id: in_temp2
+    entity_id: ${us_climate_entity}
+    internal: true
+    filters:
+      - lambda: return x;
+    unit_of_measurement: "°F"
+    on_value:
+      - lvgl.label.update:
+          id: us_climate_actual_temp_lvgl
+          text:
+            format: "%.0f°F"
+            args: [ 'x' ]
                      
   - platform: homeassistant
     id: set_temp
@@ -492,11 +542,62 @@ sensor:
       - lambda: return x;
     unit_of_measurement: "°F"
     on_value:
-      - lvgl.label.update:
-          id: set_temp_lvgl
-          text:
-            format: "%.0f°F"
-            args: [ 'x' ]
+      - if:
+          condition:
+            - lambda: return isnan(x);
+          then:
+            - lvgl.label.update:
+                id: set_temp_lvgl
+                text: "Off"
+          else:
+            - lvgl.label.update:
+                id: set_temp_lvgl
+                text:
+                  format: "%.0f°F"
+                  args: [ 'x' ]
+  - platform: homeassistant
+    id: set_temp2
+    entity_id: ${us_set_climate_entity}
+    attribute: temperature
+    internal: true
+    filters:
+      - lambda: return x;
+    unit_of_measurement: "°F"
+    on_value:
+      - if:
+          condition:
+            - lambda: return isnan(x);
+          then:
+            - lvgl.label.update:
+                id: set_temp2_lvgl
+                text: "Off"
+          else:
+            - lvgl.label.update:
+                id: set_temp2_lvgl
+                text:
+                  format: "%.0f°F"
+                  args: [ 'x' ]
+
+  - platform: template 
+    name: "temperature_sensor_template" 
+    id: set_temp_template 
+    lambda: |- 
+      return id(set_temp).state; 
+    update_interval: 30s
+    on_value:
+      - if:
+          condition:
+            - lambda: return isnan(id(set_temp).state);
+          then:
+            - lvgl.label.update:
+                id: set_temp_lvgl
+                text: "Off"
+          else:
+            - lvgl.label.update:
+                id: set_temp_lvgl
+                text:
+                  format: "%.0f°F"
+                  args: [ 'x' ]
 
   - platform: homeassistant
     id: real_feel_temp
@@ -666,46 +767,68 @@ binary_sensor:
                   text_color: white
 
 font:
-
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+  - file: "https://github.com/JMiahMan1/esphome-waveshare7/raw/refs/heads/main/Fonts/creato-display/CreatoDisplay-Bold.otf"
     id: my_font16
     size: 16
     bpp: 4
     glyphs:
       '${font_glyphs}'
       
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+  - file: "https://github.com/JMiahMan1/esphome-waveshare7/raw/refs/heads/main/Fonts/creato-display/CreatoDisplay-Regular.otf"
     id: my_font28
     size: 28
     bpp: 4
     glyphs:
       '${font_glyphs}'
 
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+  - file: "https://github.com/JMiahMan1/esphome-waveshare7/raw/refs/heads/main/Fonts/creato-display/CreatoDisplay-Bold.otf"
     id: my_font40
     size: 40
     bpp: 4
     glyphs:
       '${font_glyphs}'
       
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+  - file: "https://github.com/JMiahMan1/esphome-waveshare7/raw/refs/heads/main/Fonts/creato-display/CreatoDisplay-Bold.otf"
     id: my_font18
     size: 18
     bpp: 4
     glyphs:
-      '${font_glyphs}'      
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+      '${font_glyphs}'    
+
+  - file: "https://github.com/JMiahMan1/esphome-waveshare7/raw/refs/heads/main/Fonts/creato-display/CreatoDisplay-Bold.otf"
     id: my_font22
     size: 22
     bpp: 4
     glyphs:
       '${font_glyphs}'
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+
+  - file: "https://github.com/JMiahMan1/esphome-waveshare7/raw/refs/heads/main/Fonts/creato-display/CreatoDisplay-Bold.otf"
+    id: temp_font30
+    size: 30
+    bpp: 4
+    glyphs:
+      '${font_glyphs}'
+  
+  - file: "https://github.com/JMiahMan1/esphome-waveshare7/raw/refs/heads/main/Fonts/creato-display/CreatoDisplay-Regular.otf"
+    id: weather_font30
+    size: 30
+    bpp: 4
+    glyphs:
+      '${font_glyphs}'
+
+  - file: "https://github.com/JMiahMan1/esphome-waveshare7/raw/refs/heads/main/Fonts/clocker/Clocker-Bold.ttf"
+    id: clock_font60
+    size: 60
+    glyphs:
+      '${font_glyphs}'
+
+  - file: "https://github.com/JMiahMan1/esphome-waveshare7/raw/refs/heads/main/Fonts/creato-display/CreatoDisplay-Regular.otf"
     id: my_font60
     size: 60
     glyphs:
       '${font_glyphs}'
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/materialdesignicons-webfont.ttf"
+
+  - file: "https://github.com/Templarian/MaterialDesign-Webfont/raw/refs/heads/master/fonts/materialdesignicons-webfont.ttf"
     id: icon_font_120
     size: 120
     bpp: 4
@@ -800,19 +923,19 @@ font:
       - "\U000F036D"#microphone off  
       - "\U000F032A"#energy leaf
       
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/materialdesignicons-webfont.ttf"
+  - file: "https://github.com/Templarian/MaterialDesign-Webfont/raw/refs/heads/master/fonts/materialdesignicons-webfont.ttf"
     id: icon_font_80
     size: 80
     bpp: 4
     glyphs: *icon_glyphs
 
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/materialdesignicons-webfont.ttf"
+  - file: "https://github.com/Templarian/MaterialDesign-Webfont/raw/refs/heads/master/fonts/materialdesignicons-webfont.ttf"
     id: icon_font_60
     size: 60
     bpp: 4
     glyphs: *icon_glyphs
           
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/materialdesignicons-webfont.ttf"
+  - file: "https://github.com/Templarian/MaterialDesign-Webfont/raw/refs/heads/master/fonts/materialdesignicons-webfont.ttf"
     id: icon_font_30
     size: 30
     bpp: 4
@@ -990,80 +1113,84 @@ lvgl:
             widgets:            
               - label:
                   id: display_time
-                  text_font: my_font60
+                  text_font: clock_font60
                   text: "23:59"
               - label:
                   id: display_day
+                  text_font: weather_font30
                   text: "Sunday"
-                  translate_y: 50
+                  translate_y: 70
               - label:
                   id: display_date
+                  text_font: weather_font30
                   text: "01 June"
-                  translate_y: 80
+                  translate_y: 100
  
               - label:
                   id: display_weather
-                  translate_y: 110
+                  translate_y: 130
                   text_font: icon_font_80
                   text: "\U000F0590" 
                   
               - label:
                   id: display_weather_label
                   text: " "
-                  translate_y: 190                 
+                  translate_y: 220                 
                   
               - label:
                   id: display_out_temp
+                  text_font: temp_font30
                   text: " "
-                  translate_y: 230
-                  #was 30                 
+                  translate_y: 260                
                   translate_x: 10
                   
               - label:
                   id: display_out_temp_icon
                   text_font: icon_font_30
                   text: "\U000F024A"
-                  translate_y: 230
-                  # Was -50          
+                  translate_y: 260        
                   translate_x: -90
                   
               - label:
                   id: real_feel_temp_lvgl
+                  text_font: temp_font30
                   text: " "
-                  translate_y: 265                 
+                  translate_y: 295                 
                   translate_x: 10
                   
               - label:
                   id: display_real_feel_temp_icon
                   text_font: icon_font_30
                   text: "\U000F050F"
-                  translate_y: 265          
+                  translate_y: 295          
                   translate_x: -90
 
               - label:
                   id: display_out_high_temp
+                  text_font: temp_font30
                   text: " "
-                  translate_y: 300                 
+                  translate_y: 330                 
                   translate_x: 10
                   
               - label:
                   id: display_out_high_temp_icon
                   text_font: icon_font_30
                   text: "\U000F050F"
-                  translate_y: 300          
+                  translate_y: 330          
                   translate_x: -90
 
               - label:
                   id: display_out_low_temp
+                  text_font: temp_font30
                   text: " "
-                  translate_y: 335                 
-                  translate_x: 16
+                  translate_y: 365                 
+                  translate_x: 10
                   
               - label:
                   id: display_out_low_temp_icon
                   text_font: icon_font_30
                   text: "\U000F050F"
-                  translate_y: 335          
+                  translate_y: 365          
                   translate_x: -90
 
   pages:
@@ -1283,8 +1410,8 @@ lvgl:
                     - label:
                         id: ds_climate_actual_temp_label
                         translate_y: 55
-                        text_font: my_font18
-                        text: "Actual "
+                        text_font: my_font22
+                        text: "Actual"
 
                             
               - label:
@@ -1306,7 +1433,7 @@ lvgl:
                     bg_color: red
                   widgets:
                     - label:
-                        id: heating_up_lvgl
+                        id: climate_up_lvgl
                         text_font: icon_font_80
                         text: "\U000F0B2C"
                   on_press:
@@ -1315,7 +1442,8 @@ lvgl:
                           service: climate.set_temperature
                           data:
                             temperature: !lambda "return id(set_temp).state + 1;"
-                            entity_id: ${ds_set_climate_entity}                        
+                            entity_id: ${ds_set_climate_entity}  
+
               - button:
                   checkable: false
                   border_width: 0
@@ -1439,14 +1567,14 @@ lvgl:
                   grid_cell_y_align: STRETCH
                   widgets:
                     - label:
-                        id: wall_light_lvgl
+                        id: mb_light_lvgl
                         text_font: icon_font_80
-                        text: "\U000F091C"   
+                        text: "\U000F06B5"   
                   on_click:
                     - homeassistant.action:
-                        action: switch.toggle
+                        action: light.toggle
                         data:
-                          entity_id: switch.wall_light_esp
+                          entity_id: ${masterbed_lamp_left}
               - label:
                   grid_cell_column_pos: 0 # place the widget in
                   grid_cell_row_pos: 1 # the corresponding cell
@@ -1466,12 +1594,13 @@ lvgl:
                     - label:
                         id: kitchen_light_lvgl
                         text_font: icon_font_80
-                        text: "\U000F18DD" 
+                        text: "\U000F06B5" 
                   on_click:
                     - homeassistant.action:
-                        action: switch.toggle
+                        action: light.toggle
                         data:
-                          entity_id: switch.kitchen_ceiling_esp  
+                          entity_id: ${masterbed_lamp_right}
+
                           
               - label:
                   grid_cell_column_pos: 1 # place the widget in
@@ -1525,7 +1654,6 @@ lvgl:
 
 
 ## second row ##
-
               - button:
                   checkable: false
                   id: button2_7
@@ -1537,10 +1665,127 @@ lvgl:
                     bg_color: blue
                   widgets:
                     - label:
-                        id: spare_3_lvgl
+                        id: climate2_down_lvgl
                         text_font: icon_font_80
-                        text: "\U000F18DD" 
+                        text: "\U000F0B26"  
+                  on_press:
+                    then: 
+                      - homeassistant.service:
+                          service: climate.set_temperature
+                          data: 
+                            temperature: !lambda "return id(set_temp2).state - 1;"
+                            entity_id: ${us_set_climate_entity}
+                  
+              - label:
+                  grid_cell_column_pos: 0 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
 
+              - button:
+                  checkable: false
+                  id: button2_8
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  pressed:
+                    bg_color: red
+                  widgets:
+                    - label:
+                        id: set_temp2_lvgl
+                        translate_y: 15
+                        text_font: my_font40
+                        text: " "
+                    - label:
+                        id: set_temp2_label
+                        text_align: CENTER
+                        translate_y: 55
+                        text_font: my_font16
+                        text: "Thermostat"
+                  on_press:
+                    - if:
+                        condition:
+                          - lambda: return id(set_temp2_mode).state == "NoHold";
+                        then:
+                          - lvgl.label.update:
+                              id: set_temp2_lvgl
+                              text_color: white
+                          - lvgl.label.update:
+                             id: set_temp2_label
+                             text: "Thermostat\nOn Schedule"      
+                        else:
+                          - homeassistant.action:
+                              action: climate.set_preset_mode
+                              data:
+                                preset_mode: "NoHold"
+                                entity_id: ${us_set_climate_entity}
+                          - lvgl.label.update:
+                              id: set_temp2_lvgl
+                              text_color: white
+                          - lvgl.label.update:
+                             id: set_temp2_label
+                             text: "Thermostat\nOn Schedule"
+
+              - label:
+                  grid_cell_column_pos: 1 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: false
+                  id: button2_9
+                  grid_cell_column_pos: 2
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: us_climate_actual_temp_lvgl
+                        translate_y: 15
+                        text_font: my_font40
+                        text: " "
+                    - label:
+                        id: us_climate_actual_temp_label
+                        text_align: CENTER
+                        translate_y: 55
+                        text_font: my_font18
+                        text: "Actual"
+
+              - label:
+                  grid_cell_column_pos: 2 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: false
+                  id: button2_10
+                  grid_cell_column_pos: 3
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  pressed:
+                    bg_color: red
+                  widgets:
+                    - label:
+                        id: climate2_up_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F0B2C"
+                  on_press:
+                    then: 
+                      - homeassistant.service:
+                          service: climate.set_temperature
+                          data:
+                            temperature: !lambda "return id(set_temp2).state + 1;"
+                            entity_id: ${us_set_climate_entity}                                     
                   
               - button:
                   checkable: false
@@ -1564,63 +1809,6 @@ lvgl:
                     then:
                       - lvgl.page.previous:
                   
-              - button:
-                  checkable: false
-                  id: button2_8
-                  grid_cell_column_pos: 1
-                  grid_cell_row_pos: 2
-                  grid_cell_x_align: STRETCH
-                  grid_cell_y_align: STRETCH
-                  widgets:
-                    - label:
-                        id: spare_4_lvgl
-                        translate_y: 15
-                        text_font: icon_font_80
-                        text: "\U000F18DD"
-
-                        
-              - label:
-                  grid_cell_column_pos: 1 # place the widget in
-                  grid_cell_row_pos: 3 # the corresponding cell
-                  grid_cell_x_align: STRETCH
-                  grid_cell_y_align: STRETCH
-                  text: " "
-                  text_align: CENTER                  
-
-              - button:
-                  checkable: false
-                  id: button2_9
-                  grid_cell_column_pos: 2
-                  grid_cell_row_pos: 2
-                  grid_cell_x_align: STRETCH
-                  grid_cell_y_align: STRETCH
-                  widgets:
-                    - label:
-                        id: spare_5_lvgl
-                        translate_y: 15
-                        text_font: icon_font_80
-                        text: "\U000F18DD"                          
-              - label:
-                  grid_cell_column_pos: 2 # place the widget in
-                  grid_cell_row_pos: 3 # the corresponding cell
-                  grid_cell_x_align: STRETCH
-                  grid_cell_y_align: STRETCH
-                  text: " "
-                  text_align: CENTER                  
-
-              - button:
-                  checkable: false
-                  id: button2_10
-                  grid_cell_column_pos: 3
-                  grid_cell_row_pos: 2
-                  grid_cell_x_align: STRETCH
-                  grid_cell_y_align: STRETCH
-                  widgets:
-                    - label:
-                        id: spare_6_lvgl
-                        text_font: icon_font_80
-                        text: "\U000F18DD"
-                     
               - label:
                   grid_cell_column_pos: 3 # place the widget in
                   grid_cell_row_pos: 3 # the corresponding cell
@@ -1635,4 +1823,4 @@ lvgl:
             styles: bottom_content_left
 
         - obj:
-            styles: bottom_content_right 
+            styles: bottom_content_right
