@@ -1,7 +1,7 @@
 substitutions:
   name: waveshare-7-screen
   friendly_name: waveshare-7-jarvis
-  api_key: "ChangeMe"
+  api_key: !secret api_key
 
 #Sensors
   # Weather
