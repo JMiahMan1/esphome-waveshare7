@@ -1,4 +1,5 @@
 #Files
-
+secrets.yaml
+*.swp
 #Directories
 old/
